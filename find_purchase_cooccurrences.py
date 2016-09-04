@@ -2,6 +2,9 @@ import csv
 import argparse
 from itertools import combinations
 
+# testing
+import time
+
 
 # how frequent should co-occurrences be for us to include them?
 SIGMA = 4
@@ -11,7 +14,7 @@ MIN_SET_SIZE = 3
 
 # a parameter for tuning the time/space tradeoff for verifying large subsets
 # haven't had a chance to test it
-MAX_COMBO_SIZE = 1000
+#MAX_COMBO_SIZE = 1000
 
 '''
 FUNCTIONS FOR PARSING THE INPUT FILE
@@ -288,35 +291,65 @@ if __name__ == "__main__":
     # parse the data
     all_purchases = parse_retail_data(filename)
     max_purchase_size = max([len(purchase) for purchase in all_purchases])
-       
 
-    '''
-    base step -- get the subsets of size 1
-    '''
-    subsets_indices = count_size_one_subsets(all_purchases)
-    prune_subsets(subsets_indices)
-    
-    print "starting with",len(subsets_indices[1])
-
-    # gradually increase the size of sets
-    for subset_size in range(2, max_purchase_size):
-        print "checking subsets of size", subset_size
+    log_fname = 'time_space_by_combo_size.csv'
+    with open(log_fname,'w') as log_fout:
+        log_fwriter = csv.writer(log_fout)
+        log_header_out = ['max_combo_size','total_time','n_subset_candidates','n_subsets_continued']
+        log_fwriter.writerow(log_header_out)
         
-        '''
-        inductive step -- get the subsets of size n
-        '''
-        subsets_indices = count_subsets_of_size(all_purchases,
-                                                subset_size,
-                                                subsets_indices)
-        prune_subsets(subsets_indices)
         
-        n_added = len(subsets_indices[subset_size])
-        print "added", n_added
-
-        # if we didn't add anything in the last round, we're done
-        if n_added == 0:
-            break
-
+        # the maximum set size is 14, so I'm going to use that to try to fit the
+        #   max_combo_size parameter
+        for MAX_COMBO_SIZE in reversed(range(15)):
+            # time is obviously time
+            start_time = time.time()
+            # the number of subsets we ever store to be moved onto the next step
+            subsets_considered = 0
+            # the number of subsets that gets moved to the next step
+            subsets_continued = 0
+            
+            '''
+            base step -- get the subsets of size 1
+            '''
+            subsets_indices = count_size_one_subsets(all_purchases)
+            subsets_considered += len(subsets_indices[1])
+            prune_subsets(subsets_indices)
+            subsets_continued += len(subsets_indices[1])
+            
+            print "starting with",len(subsets_indices[1])
+        
+            # gradually increase the size of sets
+            for subset_size in range(2, max_purchase_size):
+                print "checking subsets of size", subset_size
+                
+                '''
+                inductive step -- get the subsets of size n
+                '''
+                subsets_indices = count_subsets_of_size(all_purchases,
+                                                        subset_size,
+                                                        subsets_indices)
+                subsets_considered += len(subsets_indices[subset_size])
+                prune_subsets(subsets_indices)
+                subsets_continued += len(subsets_indices[subset_size])
+                
+                n_added = len(subsets_indices[subset_size])
+                print "added", n_added
+        
+                # if we didn't add anything in the last round, we're done
+                if n_added == 0:
+                    break
+            
+            end_time = time.time()
+            total_time = end_time - start_time
+            
+            rowout = [MAX_COMBO_SIZE, total_time, subsets_considered, subsets_continued]
+            log_fwriter.writerow(rowout)
+            
+            print "max combo size:", MAX_COMBO_SIZE, "; time:", total_time
+            
+            
+'''
     # write the interesting cooccurrences to the output file
     with open(output_filename,'w') as fout:
         fwriter = csv.writer(fout)
@@ -329,3 +362,4 @@ if __name__ == "__main__":
                 
                 rowout = [subset_size, frequency] + list(subset)
                 fwriter.writerow(rowout)
+'''
