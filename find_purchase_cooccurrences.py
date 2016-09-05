@@ -4,6 +4,7 @@ from itertools import combinations
 
 # testing
 import time
+import random
 
 
 # how frequent should co-occurrences be for us to include them?
@@ -292,63 +293,136 @@ if __name__ == "__main__":
     all_purchases = parse_retail_data(filename)
     max_purchase_size = max([len(purchase) for purchase in all_purchases])
 
-    log_fname = 'time_space_by_combo_size.csv'
-    with open(log_fname,'w') as log_fout:
+    log_fname = 'optimize_combo_size_by_time.csv'
+    with open(log_fname,'w', buffering=1) as log_fout:
         log_fwriter = csv.writer(log_fout)
-        log_header_out = ['max_combo_size','total_time','n_subset_candidates','n_subsets_continued']
+        log_header_out = ['iteration','max_combo_size.train','total_time.train','n_subset_candidates.train','n_subsets_continued.train', 'max_combo_size.test','total_time.test','n_subset_candidates.test','n_subsets_continued.test']
         log_fwriter.writerow(log_header_out)
         
+        N_OPT_ITERATIONS = 100
         
-        # the maximum set size is 14, so I'm going to use that to try to fit the
-        #   max_combo_size parameter
-        for MAX_COMBO_SIZE in reversed(range(15)):
-            # time is obviously time
-            start_time = time.time()
-            # the number of subsets we ever store to be moved onto the next step
-            subsets_considered = 0
-            # the number of subsets that gets moved to the next step
-            subsets_continued = 0
+        for iteration in range(N_OPT_ITERATIONS):
+            random.shuffle(all_purchases)
+            train_purchases = all_purchases[:len(all_purchases)/2]
+            test_purchases = all_purchases[len(all_purchases)/2:]
             
-            '''
-            base step -- get the subsets of size 1
-            '''
-            subsets_indices = count_size_one_subsets(all_purchases)
-            subsets_considered += len(subsets_indices[1])
-            prune_subsets(subsets_indices)
-            subsets_continued += len(subsets_indices[1])
+            train_rowsout = []
             
-            print "starting with",len(subsets_indices[1])
-        
-            # gradually increase the size of sets
-            for subset_size in range(2, max_purchase_size):
-                print "checking subsets of size", subset_size
+            time_by_size = {}
+            
+            # the maximum set size is 14, so I'm going to use that to try to fit the
+            #   max_combo_size parameter
+            for MAX_COMBO_SIZE in reversed(range(2,15)):
+                # time is obviously time
+                start_time = time.time()
+                # the number of subsets we ever store to be moved onto the next step
+                subsets_considered = 0
+                # the number of subsets that gets moved to the next step
+                subsets_continued = 0
                 
                 '''
-                inductive step -- get the subsets of size n
+                base step -- get the subsets of size 1
                 '''
-                subsets_indices = count_subsets_of_size(all_purchases,
-                                                        subset_size,
-                                                        subsets_indices)
-                subsets_considered += len(subsets_indices[subset_size])
+                subsets_indices = count_size_one_subsets(train_purchases)
+                subsets_considered += len(subsets_indices[1])
                 prune_subsets(subsets_indices)
-                subsets_continued += len(subsets_indices[subset_size])
+                subsets_continued += len(subsets_indices[1])
                 
-                n_added = len(subsets_indices[subset_size])
-                print "added", n_added
-        
-                # if we didn't add anything in the last round, we're done
-                if n_added == 0:
-                    break
+                print "starting with",len(subsets_indices[1])
             
-            end_time = time.time()
-            total_time = end_time - start_time
+                # gradually increase the size of sets
+                for subset_size in range(2, max_purchase_size):
+                    print "checking subsets of size", subset_size
+                    
+                    '''
+                    inductive step -- get the subsets of size n
+                    '''
+                    subsets_indices = count_subsets_of_size(train_purchases,
+                                                            subset_size,
+                                                            subsets_indices)
+                    subsets_considered += len(subsets_indices[subset_size])
+                    prune_subsets(subsets_indices)
+                    subsets_continued += len(subsets_indices[subset_size])
+                    
+                    n_added = len(subsets_indices[subset_size])
+                    print "added", n_added
             
-            rowout = [MAX_COMBO_SIZE, total_time, subsets_considered, subsets_continued]
-            log_fwriter.writerow(rowout)
+                    # if we didn't add anything in the last round, we're done
+                    if n_added == 0:
+                        break               
+                
+                end_time = time.time()
+                train_total_time = end_time - start_time
+                
+                rowout = [iteration, MAX_COMBO_SIZE, train_total_time, subsets_considered, subsets_continued]
+                #log_fwriter.writerow(rowout)
+                train_rowsout.append(rowout)
+                
+                time_by_size[MAX_COMBO_SIZE] = train_total_time
+                
+                print "iteration:", iteration, "; train max combo size:", MAX_COMBO_SIZE, "; time:", train_total_time
             
-            print "max combo size:", MAX_COMBO_SIZE, "; time:", total_time
+            # find optimal max_combo_size, for time
+            all_times_by_sizes = time_by_size.items()
+            all_times_by_sizes.sort(cmp=lambda x,y: cmp(x[1],y[1]))
+            best_size = all_times_by_sizes[0][0]
             
+            test_rowsout = []
             
+            for MAX_COMBO_SIZE in reversed(range(2,15)):
+            
+                # time is obviously time
+                start_time = time.time()
+                # the number of subsets we ever store to be moved onto the next step
+                subsets_considered = 0
+                # the number of subsets that gets moved to the next step
+                subsets_continued = 0
+                
+                '''
+                base step -- get the subsets of size 1
+                '''
+                subsets_indices = count_size_one_subsets(test_purchases)
+                subsets_considered += len(subsets_indices[1])
+                prune_subsets(subsets_indices)
+                subsets_continued += len(subsets_indices[1])
+                
+                print "starting with",len(subsets_indices[1])
+            
+                # gradually increase the size of sets
+                for subset_size in range(2, max_purchase_size):
+                    print "checking subsets of size", subset_size
+                    
+                    '''
+                    inductive step -- get the subsets of size n
+                    '''
+                    subsets_indices = count_subsets_of_size(test_purchases,
+                                                            subset_size,
+                                                            subsets_indices)
+                    subsets_considered += len(subsets_indices[subset_size])
+                    prune_subsets(subsets_indices)
+                    subsets_continued += len(subsets_indices[subset_size])
+                    
+                    n_added = len(subsets_indices[subset_size])
+                    print "added", n_added
+            
+                    # if we didn't add anything in the last round, we're done
+                    if n_added == 0:
+                        break               
+                
+                end_time = time.time()
+                test_total_time = end_time - start_time
+                
+                rowout = [MAX_COMBO_SIZE, test_total_time, subsets_considered, subsets_continued]
+                test_rowsout.append(rowout)
+                    
+                print "iteration:", iteration, "; train max combo size:", MAX_COMBO_SIZE, "; time:", test_total_time
+
+            assert len(test_rowsout) == len(train_rowsout)
+            
+            for rowout_idx in range(len(train_rowsout)):
+                full_rowout = train_rowsout[rowout_idx] + test_rowsout[rowout_idx]
+                log_fwriter.writerow(full_rowout)
+                        
 '''
     # write the interesting cooccurrences to the output file
     with open(output_filename,'w') as fout:
