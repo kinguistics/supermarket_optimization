@@ -27,7 +27,7 @@ The program prints out its progress as it inductively builds subsets. It takes b
 8 and 10 minutes to run on my machine.  
 
 
-Algorithm:  
+## Algorithm:  
 The algorithm works inductively. The base step creates a collection of indices where every  
 subset of size 1 occurs.  
 
