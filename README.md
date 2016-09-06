@@ -2,30 +2,26 @@
 A program that takes a list of transactions with PLU numbers, and produces a comma-separated file of frequently co-purchased items.
 
 This repository contains the following files:  
-find_purchase_cooccurrences.py  
-	The Python code for actually finding the subsets  
-retail_25k.dat  
-	A list of 25k transactions  
-retail_25k_sigma4_setsize3.csv  
-	All subsets of size 3 or larger that occur more than 4 times in the transactions  
-README.md  
-	This file  
+* find_purchase_cooccurrences.py  
+	* The Python code for actually finding the subsets  
+* retail_25k.dat  
+	* A list of 25k transactions  
+* retail_25k_sigma4_setsize3.csv  
+	* All subsets of size 3 or larger that occur more than 4 times in the transactions  
+* README.md  
+	* This file  
 
 To generate the output file from an input file, type:  
     > python find_purchase_cooccurrences.py <input_file>  
 where the input file is a space-separated values file containing lists of transactions.  
 
 The program takes the following optional inputs:  
-	--sigma <sigma>   
-		The number of times a subset of items must have been purchased together in order  
-		for it to be considered "frequent"  
-		Defaults to 4  
-	--min_set_size <min_set_size>  
-		The minimum number of items contained in a frequent subset  
-		Defaults to 3  
-	--output_filename <output_filename>  
-		The name of the file to write the frequent subsets to  
-		Defaults to <input_file>_sigma<sigma>_setsize<min_set_size>.csv  
+* --sigma <sigma>   
+	* The number of times a subset of items must have been purchased together in order for it to be considered "frequent" . Defaults to 4  
+* --min_set_size <min_set_size>  
+	* The minimum number of items contained in a frequent subset. Defaults to 3  
+* --output_filename <output_filename>  
+	* The name of the file to write the frequent subsets to. Defaults to <input_file>_sigma<sigma>_setsize<min_set_size>.csv  
 
 The program prints out its progress as it inductively builds subsets. It takes between  
 8 and 10 minutes to run on my machine.  
