@@ -16,12 +16,12 @@ To generate the output file from an input file, type:
 where the input file is a space-separated values file containing lists of transactions.  
 
 The program takes the following optional inputs:  
-* --sigma <sigma>   
+* --sigma \<sigma\>   
 	* The number of times a subset of items must have been purchased together in order for it to be considered "frequent" . Defaults to 4  
-* --min_set_size <min_set_size>  
+* --min_set_size \<min_set_size\>  
 	* The minimum number of items contained in a frequent subset. Defaults to 3  
-* --output_filename <output_filename>  
-	* The name of the file to write the frequent subsets to. Defaults to <input_file>_sigma<sigma>_setsize<min_set_size>.csv  
+* --output_filename \<output_filename\>  
+	* The name of the file to write the frequent subsets to. Defaults to \<input_file\>_sigma<sigma>_setsize\<min_set_size\>.csv  
 
 The program prints out its progress as it inductively builds subsets. It takes between  
 8 and 10 minutes to run on my machine.  
@@ -35,11 +35,11 @@ The inductive step examines each subset of size n, and creates candidate superse
 going to each transaction where the subset was purchased, and forming the union of the subset  
 with every other item purchased in those transactions, one by one.  
 
-Candidate subsets of size n that do not occur at least as frequently as <sigma> are  
+Candidate subsets of size n that do not occur at least as frequently as \<sigma\> are  
 pruned after each step.  
 
 The inductive step includes a subroutine that checks each subset of a candidate superset  
-to make sure every subset occurs at least <sigma> times, and removes the candidate  
+to make sure every subset occurs at least \<sigma\> times, and removes the candidate  
 superset from consideration if it does not meet this requirement (since any superset of  
 a subset with frequency f can occur at most f times). The code includes a parameter,  
 MAX_COMBO_SIZE, that determines the maximum subset size to test each candidate superset on,  
